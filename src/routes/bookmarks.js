@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const { getAllBookmarks } = require('../handlers/bookmarksHandler');
+const authMiddleware = require('../middlewares/authMiddleware');
 
-// TODO: tambahkan routes di sini
+
+router.get('/', authMiddleware, getAllBookmarks);
 
 module.exports = router;
