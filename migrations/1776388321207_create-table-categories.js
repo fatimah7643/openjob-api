@@ -8,11 +8,20 @@ export const shorthands = undefined;
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const up = (pgm) => {};
+export const up = (pgm) => {
+    pgm.createTable('categories', {
+        id: { type: 'VARCHAR(50)', primaryKey: true },
+        name: { type: 'VARCHAR(100)', notNull: true },
+        created_at: { type: 'TIMESTAMP', notNull: true, default: pgm.func('NOW()') },
+        updated_at: { type: 'TIMESTAMP', notNull: true, default: pgm.func('NOW()') },
+    });
+};
 
 /**
  * @param pgm {import('node-pg-migrate').MigrationBuilder}
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const down = (pgm) => {};
+export const down = (pgm) => {
+    pgm.dropTable('categories');
+};
