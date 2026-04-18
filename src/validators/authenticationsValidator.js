@@ -13,7 +13,7 @@ const validateLogin = (req, res, next) => {
   const { error } = loginSchema.validate(req.body);
   if (error) {
     return res.status(400).json({
-      status: 'fail',
+      status: 'failed',
       message: error.details[0].message,
     });
   }
@@ -24,7 +24,7 @@ const validateRefreshToken = (req, res, next) => {
   const { error } = refreshTokenSchema.validate(req.body);
   if (error) {
     return res.status(400).json({
-      status: 'fail',
+      status: 'failed',
       message: error.details[0].message,
     });
   }

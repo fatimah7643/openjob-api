@@ -13,7 +13,7 @@ const addUser = async (req, res, next) => {
     );
     if (checkEmail.rows.length > 0) {
       return res.status(400).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Email already registered',
       });
     }
@@ -29,7 +29,7 @@ const addUser = async (req, res, next) => {
     return res.status(201).json({
       status: 'success',
       message: 'User registered successfully',
-      data: { userId: id },
+      data: { id: id },
     });
   } catch (err) {
     next(err);
@@ -47,14 +47,14 @@ const getUserById = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        status: 'fail',
+        status: 'failed',
         message: 'User not found',
       });
     }
 
     return res.status(200).json({
       status: 'success',
-      data: { user: result.rows[0] },
+      data: { ...result.rows[0] },
     });
   } catch (err) {
     next(err);

@@ -15,7 +15,7 @@ const login = async (req, res, next) => {
     );
     if (result.rows.length === 0) {
       return res.status(401).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Invalid email or password',
       });
     }
@@ -26,7 +26,7 @@ const login = async (req, res, next) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Invalid email or password',
       });
     }
@@ -72,7 +72,7 @@ const refreshToken = async (req, res, next) => {
     );
     if (result.rows.length === 0) {
       return res.status(400).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Refresh token not found',
       });
     }
@@ -83,7 +83,7 @@ const refreshToken = async (req, res, next) => {
       decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
     } catch (err) {
       return res.status(400).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Invalid refresh token',
       });
     }
@@ -117,7 +117,7 @@ const logout = async (req, res, next) => {
     );
     if (result.rows.length === 0) {
       return res.status(400).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Refresh token not found',
       });
     }

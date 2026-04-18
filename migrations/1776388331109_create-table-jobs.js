@@ -11,11 +11,16 @@ export const shorthands = undefined;
 export const up = (pgm) => {
     pgm.createTable('jobs', {
     id: { type: 'VARCHAR(50)', primaryKey: true },
-    title: { type: 'VARCHAR(200)', notNull: true },
+    title: { type: 'VARCHAR(255)', notNull: true },
     description: { type: 'TEXT' },
-    location: { type: 'VARCHAR(150)' },
-    salary: { type: 'VARCHAR(100)' },
-    type: { type: 'VARCHAR(50)' },
+    location_type: { type: 'VARCHAR(50)' },
+    location_city: { type: 'VARCHAR(100)' },
+    salary_min: { type: 'INTEGER' },
+    salary_max: { type: 'INTEGER' },
+    is_salary_visible: { type: 'BOOLEAN', default: true },
+    job_type: { type: 'VARCHAR(50)' },
+    experience_level: { type: 'VARCHAR(50)' },
+    status: { type: 'VARCHAR(50)', default: "'open'" },
     company_id: {
       type: 'VARCHAR(50)',
       notNull: true,
@@ -24,9 +29,8 @@ export const up = (pgm) => {
     },
     category_id: {
       type: 'VARCHAR(50)',
-      notNull: true,
       references: '"categories"',
-      onDelete: 'CASCADE',
+      onDelete: 'SET NULL',
     },
     created_at: { type: 'TIMESTAMP', notNull: true, default: pgm.func('NOW()') },
     updated_at: { type: 'TIMESTAMP', notNull: true, default: pgm.func('NOW()') },

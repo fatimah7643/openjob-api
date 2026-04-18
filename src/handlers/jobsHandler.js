@@ -3,19 +3,24 @@ const generateId = require('../utils/idGenerator');
 
 const addJob = async (req, res, next) => {
   try {
-    const { title, description, location, salary, type, company_id, category_id } = req.body;
+    const { title, description, location_type, location_city, salary_min, salary_max, is_salary_visible, job_type, experience_level, status, company_id, category_id } = req.body;
     const id = generateId();
 
+    const company = await pool.query('SELECT id FROM "companies" WHERE id = $1', [company_id]);
+    if (company.rows.length === 0) {
+      return res.status(400).json({ status: 'failed', message: 'Company not found' });
+    }
+
     await pool.query(
-      `INSERT INTO "jobs" (id, title, description, location, salary, type, company_id, category_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [id, title, description, location, salary, type, company_id, category_id]
+      `INSERT INTO "jobs" (id, title, description, location_type, location_city, salary_min, salary_max, is_salary_visible, job_type, experience_level, status, company_id, category_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [id, title, description, location_type, location_city, salary_min, salary_max, is_salary_visible, job_type, experience_level, status, company_id, category_id]
     );
 
     return res.status(201).json({
       status: 'success',
       message: 'Job created successfully',
-      data: { jobId: id },
+      data: { id },
     });
   } catch (err) {
     next(err);
@@ -73,14 +78,14 @@ const getJobById = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Job not found',
       });
     }
 
     return res.status(200).json({
       status: 'success',
-      data: { job: result.rows[0] },
+      data: { ...result.rows[0] },
     });
   } catch (err) {
     next(err);
@@ -90,27 +95,11 @@ const getJobById = async (req, res, next) => {
 const getJobsByCompanyId = async (req, res, next) => {
   try {
     const { companyId } = req.params;
-
-    const company = await pool.query(
-      'SELECT * FROM "companies" WHERE id = $1',
-      [companyId]
-    );
-    if (company.rows.length === 0) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Company not found',
-      });
-    }
-
     const result = await pool.query(
       'SELECT * FROM "jobs" WHERE company_id = $1 ORDER BY created_at DESC',
       [companyId]
     );
-
-    return res.status(200).json({
-      status: 'success',
-      data: { jobs: result.rows },
-    });
+    return res.status(200).json({ status: 'success', data: { jobs: result.rows } });
   } catch (err) {
     next(err);
   }
@@ -119,27 +108,11 @@ const getJobsByCompanyId = async (req, res, next) => {
 const getJobsByCategoryId = async (req, res, next) => {
   try {
     const { categoryId } = req.params;
-
-    const category = await pool.query(
-      'SELECT * FROM "categories" WHERE id = $1',
-      [categoryId]
-    );
-    if (category.rows.length === 0) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Category not found',
-      });
-    }
-
     const result = await pool.query(
       'SELECT * FROM "jobs" WHERE category_id = $1 ORDER BY created_at DESC',
       [categoryId]
     );
-
-    return res.status(200).json({
-      status: 'success',
-      data: { jobs: result.rows },
-    });
+    return res.status(200).json({ status: 'success', data: { jobs: result.rows } });
   } catch (err) {
     next(err);
   }
@@ -148,29 +121,39 @@ const getJobsByCategoryId = async (req, res, next) => {
 const updateJob = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, location, salary, type, company_id, category_id } = req.body;
 
-    const result = await pool.query(
-      'SELECT * FROM "jobs" WHERE id = $1',
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Job not found',
-      });
+    const check = await pool.query('SELECT * FROM "jobs" WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ status: 'failed', message: 'Job not found' });
     }
 
+   
+    const existing = check.rows[0];
+    const {
+      title = existing.title,
+      description = existing.description,
+      location_type = existing.location_type,
+      location_city = existing.location_city,
+      salary_min = existing.salary_min,
+      salary_max = existing.salary_max,
+      is_salary_visible = existing.is_salary_visible,
+      job_type = existing.job_type,
+      experience_level = existing.experience_level,
+      status = existing.status,
+      company_id = existing.company_id,
+      category_id = existing.category_id,
+    } = req.body;
+
     await pool.query(
-      `UPDATE "jobs" SET title=$1, description=$2, location=$3, salary=$4,
-       type=$5, company_id=$6, category_id=$7, updated_at=NOW() WHERE id=$8`,
-      [title, description, location, salary, type, company_id, category_id, id]
+      `UPDATE "jobs" SET title=$1, description=$2, location_type=$3, location_city=$4,
+       salary_min=$5, salary_max=$6, is_salary_visible=$7, job_type=$8,
+       experience_level=$9, status=$10, company_id=$11, category_id=$12, updated_at=NOW()
+       WHERE id=$13`,
+      [title, description, location_type, location_city, salary_min, salary_max,
+       is_salary_visible, job_type, experience_level, status, company_id, category_id, id]
     );
 
-    return res.status(200).json({
-      status: 'success',
-      message: 'Job updated successfully',
-    });
+    return res.status(200).json({ status: 'success', message: 'Job updated successfully' });
   } catch (err) {
     next(err);
   }
@@ -186,7 +169,7 @@ const deleteJob = async (req, res, next) => {
     );
     if (result.rows.length === 0) {
       return res.status(404).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Job not found',
       });
     }

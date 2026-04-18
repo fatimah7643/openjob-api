@@ -14,6 +14,7 @@ export const up = (pgm) => {
         name: { type: 'VARCHAR(100)', notNull: true },
         email: { type: 'VARCHAR(150)', notNull: true, unique: true },
         password: { type: 'TEXT', notNull: true },
+        role: { type: 'VARCHAR(50)', notNull: true, default: 'user' },
         created_at: { type: 'TIMESTAMP', notNull: true, default: pgm.func('NOW()') },
         updated_at: { type: 'TIMESTAMP', notNull: true, default: pgm.func('NOW()') }
     });

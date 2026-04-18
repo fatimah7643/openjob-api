@@ -3,19 +3,19 @@ const generateId = require('../utils/idGenerator');
 
 const addCompany = async (req, res, next) => {
   try {
-    const { name, description, address } = req.body;
+    const { name, description, address, location } = req.body;
     const userId = req.user.id;
     const id = generateId();
 
     await pool.query(
-      'INSERT INTO "companies" (id, name, description, address, user_id) VALUES ($1, $2, $3, $4, $5)',
-      [id, name, description, address, userId]
+      'INSERT INTO "companies" (id, name, description, address, location, user_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, name, description, address, location, userId]
     );
 
     return res.status(201).json({
       status: 'success',
       message: 'Company created successfully',
-      data: { companyId: id },
+      data: { id: id },
     });
   } catch (err) {
     next(err);
@@ -48,14 +48,14 @@ const getCompanyById = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Company not found',
       });
     }
 
     return res.status(200).json({
       status: 'success',
-      data: { company: result.rows[0] },
+      data: { ...result.rows[0] },
     });
   } catch (err) {
     next(err);
@@ -65,29 +65,19 @@ const getCompanyById = async (req, res, next) => {
 const updateCompany = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, address } = req.body;
+    const { name, description, address, location } = req.body;
 
-    const result = await pool.query(
-      'SELECT * FROM "companies" WHERE id = $1',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Company not found',
-      });
+    const check = await pool.query('SELECT * FROM "companies" WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ status: 'failed', message: 'Company not found' });
     }
 
     await pool.query(
-      'UPDATE "companies" SET name = $1, description = $2, address = $3, updated_at = NOW() WHERE id = $4',
-      [name, description, address, id]
+      'UPDATE "companies" SET name=$1, description=$2, address=$3, location=$4, updated_at=NOW() WHERE id=$5',
+      [name, description, address, location, id]
     );
 
-    return res.status(200).json({
-      status: 'success',
-      message: 'Company updated successfully',
-    });
+    return res.status(200).json({ status: 'success', message: 'Company updated successfully' });
   } catch (err) {
     next(err);
   }
@@ -104,7 +94,7 @@ const deleteCompany = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Company not found',
       });
     }

@@ -6,6 +6,8 @@ const validateAddApplication = (req, res, next) => {
       'any.required': 'job_id is required',
       'string.empty': 'job_id cannot be empty',
     }),
+    user_id: Joi.string().allow('', null),
+    status: Joi.string().allow('', null),
   });
 
   const { error } = schema.validate(req.body);

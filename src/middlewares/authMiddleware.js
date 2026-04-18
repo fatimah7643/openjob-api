@@ -6,7 +6,7 @@ const authMiddleware = (req, res, next) => {
 
   if (!token) {
     return res.status(401).json({
-      status: 'fail',
+      status: 'failed',
       message: 'Missing authentication',
     });
   }
@@ -17,7 +17,7 @@ const authMiddleware = (req, res, next) => {
     next();
   } catch (err) {
     return res.status(401).json({
-      status: 'fail',
+      status: 'failed',
       message: 'Invalid or expired token',
     });
   }

@@ -6,7 +6,7 @@ const fs = require('fs');
 const uploadDocument = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ status: 'fail', message: 'No file uploaded' });
+      return res.status(400).json({ status: 'failed', message: 'No file uploaded' });
     }
 
     const user_id = req.user.id;
@@ -21,7 +21,7 @@ const uploadDocument = async (req, res, next) => {
     return res.status(201).json({
       status: 'success',
       message: 'Document uploaded successfully',
-      data: { documentId: id },
+      data: { id: id },
     });
   } catch (err) {
     next(err);
@@ -47,7 +47,7 @@ const getDocumentById = async (req, res, next) => {
     const result = await pool.query('SELECT * FROM "documents" WHERE id = $1', [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Document not found' });
+      return res.status(404).json({ status: 'failed', message: 'Document not found' });
     }
 
     return res.status(200).json({ status: 'success', data: { document: result.rows[0] } });
@@ -63,10 +63,10 @@ const deleteDocument = async (req, res, next) => {
     const result = await pool.query('SELECT * FROM "documents" WHERE id = $1', [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Document not found' });
+      return res.status(404).json({ status: 'failed', message: 'Document not found' });
     }
 
-    // Hapus file fisik dari disk
+
     const filePath = result.rows[0].path;
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);

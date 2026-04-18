@@ -11,7 +11,7 @@ const addApplication = async (req, res, next) => {
     // Cek job ada
     const job = await pool.query('SELECT * FROM "jobs" WHERE id = $1', [job_id]);
     if (job.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Job not found' });
+      return res.status(404).json({ status: 'failed', message: 'Job not found' });
     }
 
     // Cek sudah apply belum
@@ -20,7 +20,7 @@ const addApplication = async (req, res, next) => {
       [user_id, job_id]
     );
     if (existing.rows.length > 0) {
-      return res.status(400).json({ status: 'fail', message: 'Already applied to this job' });
+      return res.status(400).json({ status: 'failed', message: 'Already applied to this job' });
     }
 
     await pool.query(
@@ -31,7 +31,7 @@ const addApplication = async (req, res, next) => {
     return res.status(201).json({
       status: 'success',
       message: 'Application submitted successfully',
-      data: { applicationId: id },
+      data: { id: id },
     });
   } catch (err) {
     next(err);
@@ -67,9 +67,9 @@ const getApplicationById = async (req, res, next) => {
       [id]
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Application not found' });
+      return res.status(404).json({ status: 'failed', message: 'Application not found' });
     }
-    return res.status(200).json({ status: 'success', data: { application: result.rows[0] } });
+    return res.status(200).json({ status: 'success', data: { ...result.rows[0] } });
   } catch (err) {
     next(err);
   }
@@ -117,7 +117,7 @@ const updateApplicationStatus = async (req, res, next) => {
 
     const result = await pool.query('SELECT * FROM "applications" WHERE id = $1', [id]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Application not found' });
+      return res.status(404).json({ status: 'failed', message: 'Application not found' });
     }
 
     await pool.query(
@@ -137,7 +137,7 @@ const deleteApplication = async (req, res, next) => {
     const { id } = req.params;
     const result = await pool.query('SELECT * FROM "applications" WHERE id = $1', [id]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Application not found' });
+      return res.status(404).json({ status: 'failed', message: 'Application not found' });
     }
     await pool.query('DELETE FROM "applications" WHERE id = $1', [id]);
     return res.status(200).json({ status: 'success', message: 'Application deleted' });

@@ -2,7 +2,7 @@ const pool = require('../database/pool');
 const generateId = require('../utils/idGenerator');
 const genarateId = require('../utils/idGenerator');
 
-const addCategory = async (req, resizeBy, next) => {
+const addCategory = async (req, res, next) => {
     try {
         const { name } = req.body;
         const id = generateId();
@@ -12,10 +12,10 @@ const addCategory = async (req, resizeBy, next) => {
             [id, name]
         );
 
-        return resizeBy.status(201).json({
+        return res.status(201).json({
             status: 'success',
             message: 'Category created successfully',
-            data: { categoryId: id },
+            data: { id: id },
         });
     }catch (err) {
         next(err);
@@ -48,14 +48,14 @@ const getCategoryById = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Category not found',
       });
     }
 
     return res.status(200).json({
       status: 'success',
-      data: { category: result.rows[0] },
+      data: { ...result.rows[0] },
     });
   } catch (err) {
     next(err);
@@ -74,7 +74,7 @@ const updateCategory = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Category not found',
       });
     }
@@ -104,7 +104,7 @@ const deleteCategory = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        status: 'fail',
+        status: 'failed',
         message: 'Category not found',
       });
     }

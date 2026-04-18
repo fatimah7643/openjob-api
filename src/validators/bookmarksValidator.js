@@ -11,7 +11,7 @@ const validateJobIdParam = (req, res, next) => {
   const { error } = schema.validate({ jobId: req.params.jobId });
   if (error) {
     return res.status(400).json({
-      status: 'fail',
+      status: 'failed',
       message: error.details[0].message,
     });
   }

@@ -11,7 +11,7 @@ const addBookmark = async (req, res, next) => {
     // Cek job ada
     const job = await pool.query('SELECT * FROM "jobs" WHERE id = $1', [jobId]);
     if (job.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Job not found' });
+      return res.status(404).json({ status: 'failed', message: 'Job not found' });
     }
 
     // Cek sudah bookmark belum
@@ -20,7 +20,7 @@ const addBookmark = async (req, res, next) => {
       [user_id, jobId]
     );
     if (existing.rows.length > 0) {
-      return res.status(400).json({ status: 'fail', message: 'Job already bookmarked' });
+      return res.status(400).json({ status: 'failed', message: 'Job already bookmarked' });
     }
 
     await pool.query(
@@ -31,7 +31,7 @@ const addBookmark = async (req, res, next) => {
     return res.status(201).json({
       status: 'success',
       message: 'Job bookmarked successfully',
-      data: { bookmarkId: id },
+      data: { id: id },
     });
   } catch (err) {
     next(err);
@@ -52,10 +52,10 @@ const getBookmarkById = async (req, res, next) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Bookmark not found' });
+      return res.status(404).json({ status: 'failed', message: 'Bookmark not found' });
     }
 
-    return res.status(200).json({ status: 'success', data: { bookmark: result.rows[0] } });
+    return res.status(200).json({ status: 'success', data: { ...result.rows[0] } });
   } catch (err) {
     next(err);
   }
@@ -73,7 +73,7 @@ const deleteBookmark = async (req, res, next) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'fail', message: 'Bookmark not found' });
+      return res.status(404).json({ status: 'failed', message: 'Bookmark not found' });
     }
 
     await pool.query(
@@ -93,11 +93,11 @@ const getAllBookmarks = async (req, res, next) => {
     const user_id = req.user.id;
 
     const result = await pool.query(
-      `SELECT b.*, j.title as job_title, j.location, j.type, j.salary
-       FROM "bookmarks" b
-       LEFT JOIN "jobs" j ON b.job_id = j.id
-       WHERE b.user_id = $1
-       ORDER BY b.created_at DESC`,
+      `SELECT b.*, j.title as job_title, j.location_city, j.job_type, j.salary_min, j.salary_max
+      FROM "bookmarks" b
+      LEFT JOIN "jobs" j ON b.job_id = j.id
+      WHERE b.user_id = $1
+      ORDER BY b.created_at DESC`,
       [user_id]
     );
 
