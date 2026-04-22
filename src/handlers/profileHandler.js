@@ -30,7 +30,16 @@ const getMyApplications = async (req, res, next) => {
     const user_id = req.user.id;
 
     const result = await pool.query(
-      `SELECT a.*, j.title as job_title, j.location_city, j.job_type,
+      `SELECT 
+        a.id, a.user_id, a.job_id, a.status, a.created_at, a.updated_at,
+        j.title as job_title,
+        j.description as job_description,
+        j.location_type,
+        j.location_city,
+        j.job_type,
+        j.experience_level,
+        j.salary_min,
+        j.salary_max,
         c.name as company_name
        FROM "applications" a
        LEFT JOIN "jobs" j ON a.job_id = j.id

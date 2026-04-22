@@ -32,7 +32,9 @@ const getAllJobs = async (req, res, next) => {
     const { title, 'company-name': companyName } = req.query;
 
     let query = `
-      SELECT j.*, c.name as company_name, cat.name as category_name
+      SELECT j.id, j.title, j.description, j.location_type, j.location_city,
+             j.salary_min, j.salary_max, j.job_type, j.experience_level,
+             j.status, j.company_id, j.category_id, c.name as company_name
       FROM "jobs" j
       LEFT JOIN "companies" c ON j.company_id = c.id
       LEFT JOIN "categories" cat ON j.category_id = cat.id
@@ -53,11 +55,7 @@ const getAllJobs = async (req, res, next) => {
     query += ' ORDER BY j.created_at DESC';
 
     const result = await pool.query(query, params);
-
-    return res.status(200).json({
-      status: 'success',
-      data: { jobs: result.rows },
-    });
+    return res.status(200).json({ status: 'success', data: { jobs: result.rows } });
   } catch (err) {
     next(err);
   }
@@ -68,25 +66,20 @@ const getJobById = async (req, res, next) => {
     const { id } = req.params;
 
     const result = await pool.query(
-      `SELECT j.*, c.name as company_name, cat.name as category_name
+      `SELECT j.id, j.title, j.description, j.location_type, j.location_city,
+              j.salary_min, j.salary_max, j.job_type, j.experience_level,
+              j.status, j.company_id, j.category_id, c.name as company_name
        FROM "jobs" j
        LEFT JOIN "companies" c ON j.company_id = c.id
-       LEFT JOIN "categories" cat ON j.category_id = cat.id
        WHERE j.id = $1`,
       [id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({
-        status: 'failed',
-        message: 'Job not found',
-      });
+      return res.status(404).json({ status: 'failed', message: 'Job not found' });
     }
 
-    return res.status(200).json({
-      status: 'success',
-      data: { ...result.rows[0] },
-    });
+    return res.status(200).json({ status: 'success', data: { ...result.rows[0] } });
   } catch (err) {
     next(err);
   }

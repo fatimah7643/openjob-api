@@ -1,20 +1,20 @@
 const pool = require('../database/pool');
 const generateId = require('../utils/idGenerator');
+const redis = require('../utils/redisClient');
 
-// POST /jobs/:jobId/bookmark — tambah bookmark
+const CACHE_TTL = 3600; 
+
 const addBookmark = async (req, res, next) => {
   try {
     const { jobId } = req.params;
     const user_id = req.user.id;
     const id = generateId();
 
-    // Cek job ada
     const job = await pool.query('SELECT * FROM "jobs" WHERE id = $1', [jobId]);
     if (job.rows.length === 0) {
       return res.status(404).json({ status: 'failed', message: 'Job not found' });
     }
 
-    // Cek sudah bookmark belum
     const existing = await pool.query(
       'SELECT * FROM "bookmarks" WHERE user_id = $1 AND job_id = $2',
       [user_id, jobId]
@@ -28,6 +28,9 @@ const addBookmark = async (req, res, next) => {
       [id, user_id, jobId]
     );
 
+    // Invalidate cache bookmarks user
+    await redis.del(`bookmarks:user:${user_id}`);
+
     return res.status(201).json({
       status: 'success',
       message: 'Job bookmarked successfully',
@@ -38,7 +41,6 @@ const addBookmark = async (req, res, next) => {
   }
 };
 
-// GET /jobs/:jobId/bookmark/:id — get detail bookmark by id
 const getBookmarkById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -61,7 +63,6 @@ const getBookmarkById = async (req, res, next) => {
   }
 };
 
-// DELETE /jobs/:jobId/bookmark — hapus bookmark by user + job
 const deleteBookmark = async (req, res, next) => {
   try {
     const { jobId } = req.params;
@@ -81,27 +82,59 @@ const deleteBookmark = async (req, res, next) => {
       [user_id, jobId]
     );
 
+    // Invalidate cache bookmarks user
+    await redis.del(`bookmarks:user:${user_id}`);
+
     return res.status(200).json({ status: 'success', message: 'Bookmark deleted successfully' });
   } catch (err) {
     next(err);
   }
 };
 
-// GET /bookmarks — semua bookmark milik user yang login
 const getAllBookmarks = async (req, res, next) => {
   try {
     const user_id = req.user.id;
+    const cacheKey = `bookmarks:user:${user_id}`;
+
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.status(200).set('X-Data-Source', 'cache').json({
+        status: 'success',
+        data: JSON.parse(cached),
+      });
+    }
 
     const result = await pool.query(
-      `SELECT b.*, j.title as job_title, j.location_city, j.job_type, j.salary_min, j.salary_max
-      FROM "bookmarks" b
-      LEFT JOIN "jobs" j ON b.job_id = j.id
-      WHERE b.user_id = $1
-      ORDER BY b.created_at DESC`,
+      `SELECT 
+        b.id, b.user_id, b.job_id, b.created_at,
+        j.title as job_title,
+        j.description as job_description,
+        j.location_type,
+        j.location_city,
+        j.salary_min,
+        j.salary_max,
+        j.is_salary_visible,
+        j.job_type,
+        j.experience_level,
+        j.status as job_status,
+        j.company_id,
+        j.category_id,
+        j.created_at as job_created_at,
+        j.updated_at as job_updated_at
+       FROM "bookmarks" b
+       LEFT JOIN "jobs" j ON b.job_id = j.id
+       WHERE b.user_id = $1
+       ORDER BY b.created_at DESC`,
       [user_id]
     );
 
-    return res.status(200).json({ status: 'success', data: { bookmarks: result.rows } });
+    const data = { bookmarks: result.rows };
+    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(data));
+
+    return res
+    .status(200)
+    .set('X-Data-Source', 'database')
+    .json({ status: 'success', data });
   } catch (err) {
     next(err);
   }

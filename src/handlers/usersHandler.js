@@ -1,12 +1,14 @@
 const bcrypt = require('bcrypt');
 const pool = require('../database/pool');
 const generateId = require('../utils/idGenerator');
+const redis = require('../utils/redisClient');
+
+const CACHE_TTL = 3600;
 
 const addUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    
     const checkEmail = await pool.query(
       'SELECT id FROM "users" WHERE email = $1',
       [email]
@@ -39,6 +41,18 @@ const addUser = async (req, res, next) => {
 const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const cacheKey = `user:${id}`;
+
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res
+        .status(200)
+        .set('X-Data-Source', 'cache')
+        .json({
+          status: 'success',
+          data: JSON.parse(cached),
+        });
+    }
 
     const result = await pool.query(
       'SELECT id, name, email, created_at, updated_at FROM "users" WHERE id = $1',
@@ -52,10 +66,16 @@ const getUserById = async (req, res, next) => {
       });
     }
 
-    return res.status(200).json({
-      status: 'success',
-      data: { ...result.rows[0] },
-    });
+    const user = result.rows[0];
+    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(user));
+
+    return res
+      .status(200)
+      .set('X-Data-Source', 'database')
+      .json({
+        status: 'success',
+        data: { ...user },
+      });
   } catch (err) {
     next(err);
   }
